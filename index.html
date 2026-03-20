@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>บัญชีร้านอาหาร</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      color: white;
+      padding: 20px 16px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    header h1 { font-size: 20px; font-weight: 700; }
+    header p { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+
+    /* Nav tabs */
+    nav {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 68px;
+      z-index: 9;
+    }
+    nav button {
+      flex: 1;
+      padding: 12px 8px;
+      border: none;
+      background: none;
+      font-size: 13px;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    nav button.active {
+      color: #ff6b35;
+      border-bottom-color: #ff6b35;
+      font-weight: 600;
+    }
+
+    /* Pages */
+    .page { display: none; padding: 16px; }
+    .page.active { display: block; }
+
+    /* Summary cards */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .card.full { grid-column: 1 / -1; }
+    .card-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+    .card-value { font-size: 22px; font-weight: 700; }
+    .card-value.income { color: #27ae60; }
+    .card-value.expense { color: #e74c3c; }
+    .card-value.profit { color: #2980b9; }
+    .card-value.loss { color: #e74c3c; }
+
+    /* Date selector */
+    .date-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      background: white;
+      border-radius: 10px;
+      padding: 10px 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .date-bar label { font-size: 13px; color: #666; white-space: nowrap; }
+    .date-bar input {
+      flex: 1;
+      border: none;
+      font-size: 14px;
+      color: #333;
+      outline: none;
+      background: none;
+    }
+
+    /* Add entry form */
+    .form-card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .form-card h3 { font-size: 15px; margin-bottom: 12px; color: #444; }
+
+    .type-toggle {
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #ddd;
+      margin-bottom: 12px;
+    }
+    .type-toggle button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: #f5f5f5;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .type-toggle button.active-income {
+      background: #27ae60;
+      color: white;
+      font-weight: 600;
+    }
+    .type-toggle button.active-expense {
+      background: #e74c3c;
+      color: white;
+      font-weight: 600;
+    }
+
+    .form-row { margin-bottom: 10px; }
+    .form-row label { font-size: 12px; color: #888; display: block; margin-bottom: 4px; }
+    .form-row input, .form-row select, .form-row textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-row input:focus, .form-row select:focus {
+      border-color: #ff6b35;
+    }
+
+    .btn-add {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .btn-add:active { opacity: 0.85; }
+
+    /* Transaction list */
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 10px;
+    }
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+    .tx-item {
+      background: white;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .tx-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .tx-icon.income { background: #e8f8ef; }
+    .tx-icon.expense { background: #fdecea; }
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-meta { font-size: 12px; color: #aaa; margin-top: 2px; }
+    .tx-amount { font-size: 15px; font-weight: 700; white-space: nowrap; }
+    .tx-amount.income { color: #27ae60; }
+    .tx-amount.expense { color: #e74c3c; }
+    .tx-delete {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+    .tx-delete:hover { color: #e74c3c; }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: #bbb;
+      font-size: 14px;
+    }
+    .empty-state .icon { font-size: 40px; margin-bottom: 8px; }
+
+    /* Monthly summary */
+    .month-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .month-bar button {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .month-bar span { font-size: 15px; font-weight: 600; }
+
+    .daily-row {
+      background: white;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      cursor: pointer;
+    }
+    .daily-row:active { background: #f9f9f9; }
+    .daily-row-top { display: flex; justify-content: space-between; align-items: center; }
+    .daily-date { font-size: 14px; font-weight: 500; }
+    .daily-profit { font-size: 14px; font-weight: 700; }
+    .daily-detail { display: flex; gap: 12px; margin-top: 6px; font-size: 12px; color: #888; }
+
+    /* Category chips */
+    .cat-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .cat-chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      background: #f9f9f9;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .cat-chip.selected { background: #ff6b35; color: white; border-color: #ff6b35; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 100;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🍜 บัญชีร้านอาหาร</h1>
+  <p id="header-date"></p>
+</header>
+
+<nav>
+  <button class="active" onclick="showPage('home')">หน้าหลัก</button>
+  <button onclick="showPage('add')">บันทึก</button>
+  <button onclick="showPage('monthly')">รายเดือน</button>
+</nav>
+
+<!-- HOME PAGE -->
+<div id="page-home" class="page active">
+  <div class="date-bar">
+    <label>วันที่:</label>
+    <input type="date" id="view-date" onchange="renderHome()" />
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">รายรับวันนี้</div>
+      <div class="card-value income" id="today-income">฿0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">รายจ่ายวันนี้</div>
+      <div class="card-value expense" id="today-expense">฿0</div>
+    </div>
+    <div class="card full">
+      <div class="card-label">กำไร / ขาดทุน วันนี้</div>
+      <div class="card-value" id="today-profit">฿0</div>
+    </div>
+  </div>
+
+  <div class="section-title">รายการวันนี้</div>
+  <div class="tx-list" id="today-list">
+    <div class="empty-state"><div class="icon">📋</div>ยังไม่มีรายการ</div>
+  </div>
+</div>
+
+<!-- ADD PAGE -->
+<div id="page-add" class="page">
+  <div class="form-card">
+    <h3>บันทึกรายการ</h3>
+
+    <div class="type-toggle">
+      <button id="btn-income" class="active-income" onclick="setType('income')">💰 รายรับ</button>
+      <button id="btn-expense" onclick="setType('expense')">🧾 รายจ่าย</button>
+    </div>
+
+    <div class="form-row">
+      <label>วันที่</label>
+      <input type="date" id="add-date" />
+    </div>
+
+    <div class="form-row" id="cat-row">
+      <label>หมวดหมู่</label>
+      <div class="cat-chips" id="cat-chips"></div>
+    </div>
+
+    <div class="form-row">
+      <label>รายละเอียด</label>
+      <input type="text" id="add-note" placeholder="เช่น ขายข้าวมันไก่, ค่าก๊าซ" />
+    </div>
+
+    <div class="form-row">
+      <label>จำนวนเงิน (บาท)</label>
+      <input type="number" id="add-amount" placeholder="0" inputmode="decimal" />
+    </div>
+
+    <button class="btn-add" onclick="addEntry()">+ บันทึก</button>
+  </div>
+</div>
+
+<!-- MONTHLY PAGE -->
+<div id="page-monthly" class="page">
+  <div class="month-bar">
+    <button onclick="changeMonth(-1)">‹</button>
+    <span id="month-label"></span>
+    <button onclick="changeMonth(1)">›</button>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">รายรับรวม</div>
+      <div class="card-value income" id="month-income">฿0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">รายจ่ายรวม</div>
+      <div class="card-value expense" id="month-expense">฿0</div>
+    </div>
+    <div class="card full">
+      <div class="card-label">กำไร / ขาดทุน เดือนนี้</div>
+      <div class="card-value" id="month-profit">฿0</div>
+    </div>
+  </div>
+
+  <div class="section-title">สรุปรายวัน</div>
+  <div id="daily-list">
+    <div class="empty-state"><div class="icon">📅</div>ไม่มีข้อมูลเดือนนี้</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ========== DATA ==========
+const INCOME_CATS = ['ขายอาหาร', 'เครื่องดื่ม', 'ส่งอาหาร', 'อื่นๆ']
+const EXPENSE_CATS = ['วัตถุดิบ', 'ค่าแรง', 'ค่าแก๊ส/น้ำ/ไฟ', 'บรรจุภัณฑ์', 'อื่นๆ']
+
+let currentType = 'income'
+let selectedCat = INCOME_CATS[0]
+let viewMonth = new Date()
+
+function getData() {
+  return JSON.parse(localStorage.getItem('restaurant_entries') || '[]')
+}
+function saveData(data) {
+  localStorage.setItem('restaurant_entries', JSON.stringify(data))
+}
+
+// ========== FORMAT ==========
+function fmt(n) {
+  return '฿' + Number(n).toLocaleString('th-TH', { minimumFractionDigits: 0 })
+}
+function todayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+// ========== INIT ==========
+window.onload = function () {
+  document.getElementById('view-date').value = todayStr()
+  document.getElementById('add-date').value = todayStr()
+  const d = new Date()
+  document.getElementById('header-date').textContent =
+    d.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  renderCats()
+  renderHome()
+  renderMonthly()
+}
+
+// ========== NAV ==========
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'))
+  document.getElementById('page-' + name).classList.add('active')
+  const idx = { home: 0, add: 1, monthly: 2 }[name]
+  document.querySelectorAll('nav button')[idx].classList.add('active')
+  if (name === 'home') renderHome()
+  if (name === 'monthly') renderMonthly()
+}
+
+// ========== TYPE TOGGLE ==========
+function setType(t) {
+  currentType = t
+  document.getElementById('btn-income').className = t === 'income' ? 'active-income' : ''
+  document.getElementById('btn-expense').className = t === 'expense' ? 'active-expense' : ''
+  selectedCat = (t === 'income' ? INCOME_CATS : EXPENSE_CATS)[0]
+  renderCats()
+}
+
+function renderCats() {
+  const cats = currentType === 'income' ? INCOME_CATS : EXPENSE_CATS
+  const el = document.getElementById('cat-chips')
+  el.innerHTML = cats.map(c =>
+    `<span class="cat-chip ${c === selectedCat ? 'selected' : ''}" onclick="selectCat('${c}')">${c}</span>`
+  ).join('')
+}
+
+function selectCat(c) {
+  selectedCat = c
+  renderCats()
+}
+
+// ========== ADD ENTRY ==========
+function addEntry() {
+  const date = document.getElementById('add-date').value
+  const note = document.getElementById('add-note').value.trim()
+  const amount = parseFloat(document.getElementById('add-amount').value)
+
+  if (!date) { showToast('กรุณาเลือกวันที่'); return }
+  if (!amount || amount <= 0) { showToast('กรุณากรอกจำนวนเงิน'); return }
+
+  const data = getData()
+  data.push({
+    id: Date.now(),
+    type: currentType,
+    date,
+    cat: selectedCat,
+    note: note || selectedCat,
+    amount
+  })
+  saveData(data)
+
+  document.getElementById('add-note').value = ''
+  document.getElementById('add-amount').value = ''
+  showToast('บันทึกแล้ว ✓')
+  renderHome()
+  renderMonthly()
+}
+
+// ========== HOME ==========
+function renderHome() {
+  const date = document.getElementById('view-date').value
+  const data = getData().filter(e => e.date === date)
+
+  const income = data.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0)
+  const expense = data.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0)
+  const profit = income - expense
+
+  document.getElementById('today-income').textContent = fmt(income)
+  document.getElementById('today-expense').textContent = fmt(expense)
+  const profitEl = document.getElementById('today-profit')
+  profitEl.textContent = fmt(profit)
+  profitEl.className = 'card-value ' + (profit >= 0 ? 'profit' : 'loss')
+
+  const list = document.getElementById('today-list')
+  if (data.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📋</div>ยังไม่มีรายการ</div>'
+    return
+  }
+
+  list.innerHTML = [...data].reverse().map(e => `
+    <div class="tx-item">
+      <div class="tx-icon ${e.type}">${e.type === 'income' ? '💰' : '🧾'}</div>
+      <div class="tx-info">
+        <div class="tx-name">${e.note}</div>
+        <div class="tx-meta">${e.cat}</div>
+      </div>
+      <div class="tx-amount ${e.type}">${e.type === 'income' ? '+' : '-'}${fmt(e.amount)}</div>
+      <button class="tx-delete" onclick="deleteEntry(${e.id})">✕</button>
+    </div>
+  `).join('')
+}
+
+function deleteEntry(id) {
+  if (!confirm('ลบรายการนี้?')) return
+  saveData(getData().filter(e => e.id !== id))
+  renderHome()
+  renderMonthly()
+  showToast('ลบแล้ว')
+}
+
+// ========== MONTHLY ==========
+function changeMonth(d) {
+  viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + d, 1)
+  renderMonthly()
+}
+
+function renderMonthly() {
+  const y = viewMonth.getFullYear()
+  const m = viewMonth.getMonth()
+  document.getElementById('month-label').textContent =
+    viewMonth.toLocaleDateString('th-TH', { year: 'numeric', month: 'long' })
+
+  const prefix = `${y}-${String(m + 1).padStart(2, '0')}`
+  const data = getData().filter(e => e.date.startsWith(prefix))
+
+  const income = data.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0)
+  const expense = data.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0)
+  const profit = income - expense
+
+  document.getElementById('month-income').textContent = fmt(income)
+  document.getElementById('month-expense').textContent = fmt(expense)
+  const profitEl = document.getElementById('month-profit')
+  profitEl.textContent = fmt(profit)
+  profitEl.className = 'card-value ' + (profit >= 0 ? 'profit' : 'loss')
+
+  // Group by date
+  const byDate = {}
+  data.forEach(e => {
+    if (!byDate[e.date]) byDate[e.date] = { income: 0, expense: 0 }
+    byDate[e.date][e.type] += e.amount
+  })
+
+  const el = document.getElementById('daily-list')
+  const dates = Object.keys(byDate).sort().reverse()
+  if (dates.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📅</div>ไม่มีข้อมูลเดือนนี้</div>'
+    return
+  }
+
+  el.innerHTML = dates.map(date => {
+    const d = byDate[date]
+    const p = d.income - d.expense
+    const dateObj = new Date(date + 'T00:00:00')
+    const label = dateObj.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' })
+    return `
+      <div class="daily-row" onclick="jumpToDate('${date}')">
+        <div class="daily-row-top">
+          <span class="daily-date">${label}</span>
+          <span class="daily-profit" style="color:${p >= 0 ? '#27ae60' : '#e74c3c'}">${p >= 0 ? '+' : ''}${fmt(p)}</span>
+        </div>
+        <div class="daily-detail">
+          <span>รายรับ ${fmt(d.income)}</span>
+          <span>รายจ่าย ${fmt(d.expense)}</span>
+        </div>
+      </div>
+    `
+  }).join('')
+}
+
+function jumpToDate(date) {
+  document.getElementById('view-date').value = date
+  showPage('home')
+}
+
+// ========== TOAST ==========
+function showToast(msg) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.classList.add('show')
+  setTimeout(() => t.classList.remove('show'), 2000)
+}
+</script>
+</body>
+</html>
