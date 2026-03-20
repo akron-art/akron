@@ -367,15 +367,19 @@
 
   <div class="cards">
     <div class="card">
-      <div class="card-label">รายรับวันนี้</div>
-      <div class="card-value income" id="today-income">฿0</div>
+      <div class="card-label">💵 เงินสด</div>
+      <div class="card-value income" id="today-cash">฿0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">📲 เงินโอน</div>
+      <div class="card-value income" id="today-transfer">฿0</div>
     </div>
     <div class="card">
       <div class="card-label">รายจ่ายวันนี้</div>
       <div class="card-value expense" id="today-expense">฿0</div>
     </div>
-    <div class="card full">
-      <div class="card-label">กำไร / ขาดทุน วันนี้</div>
+    <div class="card">
+      <div class="card-label">กำไร / ขาดทุน</div>
       <div class="card-value" id="today-profit">฿0</div>
     </div>
   </div>
@@ -430,15 +434,19 @@
 
   <div class="cards">
     <div class="card">
-      <div class="card-label">รายรับรวม</div>
-      <div class="card-value income" id="month-income">฿0</div>
+      <div class="card-label">💵 เงินสด</div>
+      <div class="card-value income" id="month-cash">฿0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">📲 เงินโอน</div>
+      <div class="card-value income" id="month-transfer">฿0</div>
     </div>
     <div class="card">
       <div class="card-label">รายจ่ายรวม</div>
       <div class="card-value expense" id="month-expense">฿0</div>
     </div>
-    <div class="card full">
-      <div class="card-label">กำไร / ขาดทุน เดือนนี้</div>
+    <div class="card">
+      <div class="card-label">กำไร / ขาดทุน</div>
       <div class="card-value" id="month-profit">฿0</div>
     </div>
   </div>
@@ -464,7 +472,7 @@
 
 <script>
 // ========== DATA ==========
-const INCOME_CATS = ['ขายอาหาร', 'เครื่องดื่ม', 'ส่งอาหาร', 'อื่นๆ']
+const INCOME_CATS = ['เงินสด', 'เงินโอน']
 const EXPENSE_CATS = ['วัตถุดิบ', 'ค่าแรง', 'ค่าแก๊ส/น้ำ/ไฟ', 'บรรจุภัณฑ์', 'อื่นๆ']
 
 let currentType = 'income'
@@ -563,11 +571,14 @@ function renderHome() {
   const date = document.getElementById('view-date').value
   const data = getData().filter(e => e.date === date)
 
-  const income = data.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0)
+  const cash = data.filter(e => e.type === 'income' && e.cat === 'เงินสด').reduce((s, e) => s + e.amount, 0)
+  const transfer = data.filter(e => e.type === 'income' && e.cat === 'เงินโอน').reduce((s, e) => s + e.amount, 0)
+  const income = cash + transfer
   const expense = data.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0)
   const profit = income - expense
 
-  document.getElementById('today-income').textContent = fmt(income)
+  document.getElementById('today-cash').textContent = fmt(cash)
+  document.getElementById('today-transfer').textContent = fmt(transfer)
   document.getElementById('today-expense').textContent = fmt(expense)
   const profitEl = document.getElementById('today-profit')
   profitEl.textContent = fmt(profit)
@@ -615,11 +626,14 @@ function renderMonthly() {
   const prefix = `${y}-${String(m + 1).padStart(2, '0')}`
   const data = getData().filter(e => e.date.startsWith(prefix))
 
-  const income = data.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0)
+  const cash = data.filter(e => e.type === 'income' && e.cat === 'เงินสด').reduce((s, e) => s + e.amount, 0)
+  const transfer = data.filter(e => e.type === 'income' && e.cat === 'เงินโอน').reduce((s, e) => s + e.amount, 0)
+  const income = cash + transfer
   const expense = data.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0)
   const profit = income - expense
 
-  document.getElementById('month-income').textContent = fmt(income)
+  document.getElementById('month-cash').textContent = fmt(cash)
+  document.getElementById('month-transfer').textContent = fmt(transfer)
   document.getElementById('month-expense').textContent = fmt(expense)
   const profitEl = document.getElementById('month-profit')
   profitEl.textContent = fmt(profit)
@@ -719,9 +733,13 @@ function exportCSV() {
   })
 
   // Summary rows
-  const income = data.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0)
+  const cash = data.filter(e => e.type === 'income' && e.cat === 'เงินสด').reduce((s, e) => s + e.amount, 0)
+  const transfer = data.filter(e => e.type === 'income' && e.cat === 'เงินโอน').reduce((s, e) => s + e.amount, 0)
+  const income = cash + transfer
   const expense = data.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0)
   csv += `\n"สรุป ${monthName}",,,,\n`
+  csv += `"เงินสด","","","",${cash}\n`
+  csv += `"เงินโอน","","","",${transfer}\n`
   csv += `"รายรับรวม","","","",${income}\n`
   csv += `"รายจ่ายรวม","","","",${expense}\n`
   csv += `"กำไร/ขาดทุน","","","",${income - expense}\n`
