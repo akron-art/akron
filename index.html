@@ -410,6 +410,14 @@
       <div class="cat-chips" id="cat-chips"></div>
     </div>
 
+    <div class="form-row" id="pay-method-row" style="display:none">
+      <label>วิธีชำระ</label>
+      <div class="type-toggle">
+        <button id="btn-pay-cash" class="active-income" onclick="setPayMethod('เงินสด')">💵 เงินสด</button>
+        <button id="btn-pay-transfer" onclick="setPayMethod('เงินโอน')">📲 เงินโอน</button>
+      </div>
+    </div>
+
     <div class="form-row">
       <label>รายละเอียด</label>
       <input type="text" id="add-note" placeholder="เช่น ขายข้าวมันไก่, ค่าก๊าซ" />
@@ -477,6 +485,7 @@ const EXPENSE_CATS = ['วัตถุดิบ', 'ค่าแรง', 'ค่�
 
 let currentType = 'income'
 let selectedCat = INCOME_CATS[0]
+let selectedPayMethod = 'เงินสด'
 let viewMonth = new Date()
 
 function getData() {
@@ -523,7 +532,14 @@ function setType(t) {
   document.getElementById('btn-income').className = t === 'income' ? 'active-income' : ''
   document.getElementById('btn-expense').className = t === 'expense' ? 'active-expense' : ''
   selectedCat = (t === 'income' ? INCOME_CATS : EXPENSE_CATS)[0]
+  document.getElementById('pay-method-row').style.display = t === 'expense' ? '' : 'none'
   renderCats()
+}
+
+function setPayMethod(m) {
+  selectedPayMethod = m
+  document.getElementById('btn-pay-cash').className = m === 'เงินสด' ? 'active-income' : ''
+  document.getElementById('btn-pay-transfer').className = m === 'เงินโอน' ? 'active-income' : ''
 }
 
 function renderCats() {
@@ -554,6 +570,7 @@ function addEntry() {
     type: currentType,
     date,
     cat: selectedCat,
+    payMethod: currentType === 'expense' ? selectedPayMethod : selectedCat,
     note: note || selectedCat,
     amount
   })
@@ -595,7 +612,7 @@ function renderHome() {
       <div class="tx-icon ${e.type}">${e.type === 'income' ? '💰' : '🧾'}</div>
       <div class="tx-info">
         <div class="tx-name">${e.note}</div>
-        <div class="tx-meta">${e.cat}</div>
+        <div class="tx-meta">${e.type === 'expense' ? e.cat + (e.payMethod ? ' · ' + e.payMethod : '') : e.cat}</div>
       </div>
       <div class="tx-amount ${e.type}">${e.type === 'income' ? '+' : '-'}${fmt(e.amount)}</div>
       <button class="tx-delete" onclick="deleteEntry(${e.id})">✕</button>
