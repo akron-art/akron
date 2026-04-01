@@ -523,6 +523,9 @@
   <button class="btn-export" onclick="copyCSV()" style="background:#1565C0;margin-top:8px">
     <span>📋</span> คัดลอก CSV (วางใน Google Sheets)
   </button>
+  <button class="btn-export" onclick="clearMonthData()" style="background:#B71C1C;margin-top:8px">
+    <span>🗑️</span> ล้างข้อมูลเดือนนี้ทั้งหมด
+  </button>
   <div class="section-title" style="margin-top:14px">สรุปรายวัน</div>
   <div id="daily-list">
     <div class="empty-state"><div class="icon">📅</div>ไม่มีข้อมูลเดือนนี้</div>
@@ -566,8 +569,8 @@
 <script>
 // ─── CONSTANTS ───
 const INCOME_CATS = ['ขายอาหาร', 'เครื่องดื่ม', 'ส่งอาหาร', 'อื่นๆ']
-const EXPENSE_CATS = ['วัตถุดิบ', 'น้ำแข็ง', 'ตลาดสด', 'Makro', 'กับข้าวพนักงาน', 'ค่าแรง', 'ค่าแก๊ส/น้ำ/ไฟ', 'บรรจุภัณฑ์', 'อื่นๆ']
-const CAT_COLORS = { 'วัตถุดิบ': '#EF5350', 'น้ำแข็ง': '#42A5F5', 'ตลาดสด': '#66BB6A', 'Makro': '#FFA726', 'กับข้าวพนักงาน': '#AB47BC', 'ค่าแรง': '#FF7043', 'ค่าแก๊ส/น้ำ/ไฟ': '#FFCA28', 'บรรจุภัณฑ์': '#8D6E63', 'อื่นๆ': '#78909C' }
+const EXPENSE_CATS = ['วัตถุดิบ', 'น้ำแข็ง', 'ตลาดสด', 'Makro', 'กับข้าวพนักงาน', 'ค่าแรง', 'Part-time', 'ล้างจาน', 'ค่าแก๊ส/น้ำ/ไฟ', 'บรรจุภัณฑ์', 'อื่นๆ']
+const CAT_COLORS = { 'วัตถุดิบ': '#EF5350', 'น้ำแข็ง': '#42A5F5', 'ตลาดสด': '#66BB6A', 'Makro': '#FFA726', 'กับข้าวพนักงาน': '#AB47BC', 'ค่าแรง': '#FF7043', 'Part-time': '#26A69A', 'ล้างจาน': '#EC407A', 'ค่าแก๊ส/น้ำ/ไฟ': '#FFCA28', 'บรรจุภัณฑ์': '#8D6E63', 'อื่นๆ': '#78909C' }
 
 // ─── STATE ───
 let currentType = 'income'
@@ -1147,6 +1150,19 @@ ${q}${context}`
   } catch(err) {
     resultEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message
   }
+}
+
+function clearMonthData() {
+  const y = viewMonth.getFullYear(), m = viewMonth.getMonth()
+  const prefix = `${y}-${String(m + 1).padStart(2, '0')}`
+  const monthName = viewMonth.toLocaleDateString('th-TH', { year: 'numeric', month: 'long' })
+  const data = getData()
+  const count = data.filter(e => e.date.startsWith(prefix)).length
+  if (count === 0) { showToast('ไม่มีข้อมูลเดือนนี้'); return }
+  if (!confirm(`ลบข้อมูลเดือน${monthName} ทั้งหมด ${count} รายการ?\nไม่สามารถกู้คืนได้`)) return
+  saveData(data.filter(e => !e.date.startsWith(prefix)))
+  renderHome(); renderMonthly()
+  showToast(`ลบข้อมูลเดือน${monthName} แล้ว ✓`)
 }
 
 function buildCSVText() {
